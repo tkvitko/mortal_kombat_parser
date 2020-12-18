@@ -17,9 +17,6 @@ score_of_end = 5
 
 
 def parse_sport(url):
-    header = {
-        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36',
-        'Accept': '*/*'}
 
     chrome_options = Options()
     chrome_options.add_argument('start-maximized')
@@ -38,7 +35,7 @@ def parse_sport(url):
         try:
             sport_name_block = driver.find_element_by_class_name('c-events__item_head')
             sport_name = sport_name_block.find_element_by_class_name('c-events__name').text
-            #print(sport_name)
+            # print(sport_name)
             words = sport_name.split(' ')
             if words[0] == 'Mortal':
                 pass
@@ -85,9 +82,6 @@ def parse_sport(url):
 
 
 def parse_match(url):
-    header = {
-        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36',
-        'Accept': '*/*'}
 
     chrome_options = Options()
     chrome_options.add_argument('start-maximized')
@@ -185,10 +179,9 @@ def get_first_from_list(matches_list):
         number = match['number']
         url = match['url']
 
-        match_dict = {}
-        match_dict['number'] = number
+        match_dict = {'number': number, 'is_interested': parse_match(url)[0], 'times': parse_match(url)[1],
+                      'scores': parse_match(url)[2], 'koefs': parse_match(url)[3]}
         # остальные значения вынимаем со страницы матча
-        match_dict['is_interested'], match_dict['times'], match_dict['scores'], match_dict['koefs'] = parse_match(url)
 
         # по завершении матча записываем всю информацию в итоговый csv
         with open(csv_file, 'a', encoding='utf-8-sig') as csvfile:
@@ -204,6 +197,9 @@ def get_first_from_list(matches_list):
 if __name__ == "__main__":
 
     script, url, csv_file = argv
+
+    # Тестирование:
+    # url, csv_file = "https://one-xskbdc.world/ru/live/Mortal-Kombat/1252965-Mortal-Kombat-X/", 'matches.csv'
 
     # асинхронно запускаем парсер матчей
     _thread.start_new_thread(parse_sport, (url,))
