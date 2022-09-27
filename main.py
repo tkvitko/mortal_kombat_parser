@@ -17,10 +17,8 @@ score_of_end = 5
 
 
 def parse_sport(url):
-
     chrome_options = Options()
     chrome_options.add_argument('start-maximized')
-    # на всякий случай, без этого могло упасть по timeout:
     chrome_options.add_argument('enable-features=NetworkServiceInProcess')
     chrome_options.add_argument('--no-sandbox')
     driver = webdriver.Chrome('./chromedriver', options=chrome_options)
@@ -35,7 +33,6 @@ def parse_sport(url):
         try:
             sport_name_block = driver.find_element_by_class_name('c-events__item_head')
             sport_name = sport_name_block.find_element_by_class_name('c-events__name').text
-            # print(sport_name)
             words = sport_name.split(' ')
             if words[0] == 'Mortal':
                 pass
@@ -52,29 +49,29 @@ def parse_sport(url):
         for match_obj in matches_obj_list:
             try:
                 match = {}
-                element = WebDriverWait(driver, 30).until(
+                _ = WebDriverWait(driver, 30).until(
                     ec.presence_of_element_located((By.TAG_NAME, "a")))
                 a = match_obj.find_element_by_tag_name('a')
                 match_url = a.get_attribute('href')
                 spans = a.find_elements_by_tag_name('span')
-                match_number = spans[-1].text  # вынимаем номер матча
+                match_number = spans[-1].text  # getting the number of match
 
-                round = None  # по каждому матчу проверяем, начался ли он, или это только прогноз
+                round_ = None  # checking for each match if it already starts or it is only forecast
                 try:
-                    subitem = match_obj.find_element_by_class_name('c-events-scoreboard__subitem')
-                    round = subitem.find_element_by_class_name('c-events__overtime')
+                    sub_item = match_obj.find_element_by_class_name('c-events-scoreboard__subitem')
+                    round_ = sub_item.find_element_by_class_name('c-events__overtime')
                 except:
                     pass
 
-                if round:  # если матч уже начался и есть текущий раунд
+                if round_:  # if match has been started already and there is an actual round
 
-                    if match_number not in numbers:  # если это новый номер матча
-                        match['number'] = match_number  # заполняем номер матча
-                        match['url'] = match_url  # заполняем url на матч
-                        # match['gone'] = False  # помечаем, что еще не анализировали
-                        matches.append(match)  # добавляем матч в общий список
+                    if match_number not in numbers:  # if it is new number of match
+                        match['number'] = match_number  # fill match number
+                        match['url'] = match_url  # fill match url
+                        # match['gone'] = False  # fill match not yet analysed
+                        matches.append(match)  # add match to the list
 
-                        numbers.add(match_number)  # добавляем номер матча в список уникальных номеров
+                        numbers.add(match_number)  # add match number to the list of uniq match numbers
             except:
                 continue
 
@@ -82,10 +79,8 @@ def parse_sport(url):
 
 
 def parse_match(url):
-
     chrome_options = Options()
     chrome_options.add_argument('start-maximized')
-    # на всякий случай, без этого могло упасть по timeout:
     chrome_options.add_argument('enable-features=NetworkServiceInProcess')
     chrome_options.add_argument('--no-sandbox')
     driver = webdriver.Chrome('./chromedriver', options=chrome_options)
@@ -100,43 +95,43 @@ def parse_match(url):
 
     while max_score < score_of_end:
 
-        # Сбор счета
+        # getting score
         try:
             scores_pair = ''
             scores_obj = driver.find_elements_by_class_name('c-tablo-count__num')
 
-            for score_obj in scores_obj:  # для каджого блока очков
-                score = score_obj.text  # вынимаем значение очков
-                scores_pair += score  # добавляем значение в строку счета
-                scores_pair += ':'  # добавляем разделитель
-                if int(score) > max_score:  # если текущее значение больше текущего максимума
-                    max_score = int(score)  # максимум становится текущим значением
+            for score_obj in scores_obj:  # for every block of scores
+                score = score_obj.text  # getting scores value
+                scores_pair += score  # add value to the score string
+                scores_pair += ':'  # add delimiter
+                if int(score) > max_score:  # if current value is bigger than current max
+                    max_score = int(score)  # refresh current max
 
-            scores_pair = scores_pair[:-1]  # отрезаем лишний разделительвконце строки
-            if scores_pairs_list.count(scores_pair) == 0:  # добавляем счет в список счетов
+            scores_pair = scores_pair[:-1]  # remove redundant delimiter from the end of the string
+            if scores_pairs_list.count(scores_pair) == 0:  # add score to the list of scores
                 scores_pairs_list.append(scores_pair)
 
         except:
             pass
 
-        # Сбор времени раундов
+        # getting times of rounds
         try:
-            element = WebDriverWait(driver, 60).until(
+            _ = WebDriverWait(driver, 60).until(
                 ec.presence_of_element_located((By.CLASS_NAME, "cyber-stat-table__body")))
-            table_obj = driver.find_element_by_class_name('cyber-stat-table__body')  # находим таблицу
-            cols_obj = table_obj.find_elements_by_class_name('cyber-stat-table__col')  # находим колонки
+            table_obj = driver.find_element_by_class_name('cyber-stat-table__body')  # find table
+            cols_obj = table_obj.find_elements_by_class_name('cyber-stat-table__col')  # find columns
 
             times_list = []
-            for col_obj in cols_obj:  # для каждой колонки
+            for col_obj in cols_obj:  # for each column
                 time = col_obj.find_elements_by_class_name('cyber-stat-table__cell')[
-                    -1].text  # время - последняя строка
-                times_list.append(time)  # добавляем время в список
+                    -1].text  # time is in the last string
+                times_list.append(time)  # adding time to the list
         except:
             pass
 
-        # Сбор продолжительности раундов из талицы под основной
+        # getting the round's durations from the botton row
         try:
-            element = WebDriverWait(driver, 30).until(
+            _ = WebDriverWait(driver, 30).until(
                 ec.presence_of_element_located((By.CLASS_NAME, "bet_group_col")))
             blocks = driver.find_elements_by_class_name('bet_group_col')
             right_block = blocks[1]
@@ -158,14 +153,14 @@ def parse_match(url):
         except:
             pass
 
-        if max_score >= score_of_end - 1:  # если счет уже поднялся до 4х
-            sleep(refresh_timeout_short)  # обновляем страницу часто, чтобы не упустить финал
-        else:  # иначе
-            sleep(refresh_timeout)  # обновляем страницу редко
+        if max_score >= score_of_end - 1:  # if the score is already above 4
+            sleep(refresh_timeout_short)  # update the page more frequent not to miss the end of match
+        else:
+            sleep(refresh_timeout)  # update the page rarely
 
     driver.close()
 
-    # Проверка, является ли матч "тем самым"
+    # check if this match is interested
     for count in interested_counts:
         if count in scores_pairs_list:
             is_interested = True
@@ -175,15 +170,15 @@ def parse_match(url):
 
 def get_first_from_list(matches_list):
     try:
-        match = matches.pop(0)  # пробуем забрать первый элемент
+        match = matches.pop(0)  # try to get the first element
         number = match['number']
         url = match['url']
 
         match_dict = {'number': number, 'is_interested': parse_match(url)[0], 'times': parse_match(url)[1],
                       'scores': parse_match(url)[2], 'koefs': parse_match(url)[3]}
-        # остальные значения вынимаем со страницы матча
+        # other values will be parsed from match's page
 
-        # по завершении матча записываем всю информацию в итоговый csv
+        # write the values to the result csv-file after match ends
         with open(csv_file, 'a', encoding='utf-8-sig') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=['number', 'is_interested', 'times', 'scores', 'koefs'],
                                     delimiter=';')
@@ -198,13 +193,13 @@ if __name__ == "__main__":
 
     script, url, csv_file = argv
 
-    # Тестирование:
+    # Testing:
     # url, csv_file = "https://one-xskbdc.world/ru/live/Mortal-Kombat/1252965-Mortal-Kombat-X/", 'matches.csv'
 
-    # асинхронно запускаем парсер матчей
+    # asynchronously starts the matches parser
     _thread.start_new_thread(parse_sport, (url,))
 
-    # асинхронно работаем с каждым взятым матчем
+    # asynchronously work with each match
     while True:
         if len(matches) > 0:
             _thread.start_new_thread(get_first_from_list, (matches,))
